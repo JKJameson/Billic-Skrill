@@ -97,7 +97,7 @@ class Skrill {
 				set_config('skrill_require_verification', $_POST['skrill_require_verification']);
 				set_config('skrill_email', $_POST['skrill_email']);
 				set_config('skrill_secret', $_POST['skrill_secret']);
-				set_config('paypal_limit_users_before', $_POST['skrill_limit_users_before']);
+				set_config('skrill_limit_users_before', $_POST['skrill_limit_users_before']);
 				$billic->status = 'updated';
 			}
 		}
