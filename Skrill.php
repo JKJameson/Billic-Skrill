@@ -12,6 +12,12 @@ class Skrill {
 		if (get_config('skrill_email') == '') {
 			return $html;
 		}
+		$limit_users_before = get_config('skrill_limit_users_before');
+		if (!empty($limit_users_before)) {
+			$time = strtotime($limit_users_before);
+			if ($billic->user['datecreated']>$time)
+				return false;
+		}
 		if ($billic->user['verified'] == 0 && get_config('skrill_require_verification') == 1) {
 			return 'verify';
 		} else {
@@ -65,13 +71,33 @@ class Skrill {
 			echo '<tr><td>Require Verification</td><td><input type="checkbox" name="skrill_require_verification" value="1"' . (get_config('skrill_require_verification') == 1 ? ' checked' : '') . '></td></tr>';
 			echo '<tr><td>Skrill Email</td><td><input type="text" class="form-control" name="skrill_email" value="' . safe(get_config('skrill_email')) . '"></td></tr>';
 			echo '<tr><td>Skrill Secret</td><td><input type="text" class="form-control" name="skrill_secret" value="' . safe(get_config('skrill_secret')) . '"></td></tr>';
+			echo '<tr><td>Limit Payments</td><td>from users registered before <input type="text" name="skrill_limit_users_before" value="' . safe(get_config('skrill_limit_users_before')). '" placeholder="YYYY-MM-DD" class="form-control" style="max-width: 150px;display:inline">. Leave blank to disable.</td></tr>';
 			echo '<tr><td colspan="2" align="center"><input type="submit" class="btn btn-default" name="update" value="Update &raquo;"></td></tr>';
 			echo '</table></form>';
 		} else {
+			$date = explode('-', $_POST['skrill_limit_users_before']);
+			if (count($date)==1 && empty($date[0])) {
+				// empty date
+			} else {
+				if (strlen($date[0])!==4 || strlen($date[1])!==2 || strlen($date[2])!==2)
+					$billic->errors[] = 'Invalid date';
+				elseif (!ctype_digit($date[0]) || $date[0]<1970)
+					$billic->errors[] = 'Invalid year';
+				elseif (!ctype_digit($date[1]) || $date[1]<1 || $date[1]>12)
+					$billic->errors[] = 'Invalid month';
+				elseif (!ctype_digit($date[2]) || $date[1]<1 || $date[1]>31)
+					$billic->errors[] = 'Invalid day';
+				else {
+					$daysInMonth = date('t', mktime(0, 0, 1, $date[1], 1, $date[0]));
+					if ($date[2]>$daysInMonth)
+						$billic->errors[] = "There are only $daysInMonth days in the month";
+				}
+			}
 			if (empty($billic->errors)) {
 				set_config('skrill_require_verification', $_POST['skrill_require_verification']);
 				set_config('skrill_email', $_POST['skrill_email']);
 				set_config('skrill_secret', $_POST['skrill_secret']);
+				set_config('paypal_limit_users_before', $_POST['skrill_limit_users_before']);
 				$billic->status = 'updated';
 			}
 		}
